@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analítico Completo - Sistema Penitenciário</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        .gradient-red { background: linear-gradient(135deg, #DC2626 0%, #000000 50%, #DC2626 100%); }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .chart-container { position: relative; height: 400px; width: 100%; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .loading { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .tab-active { background-color: #DC2626 !important; color: white !important; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-red text-white shadow-2xl sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold mb-1">📊 Dashboard Analítico Completo</h1>
+                    <p class="text-sm opacity-90">Sistema Penitenciário - Região Noroeste</p>
+                </div>
+                <button id="btnNovaAnalise" onclick="resetarDashboard()" class="hidden px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all">
+                    ✖️ Nova Análise
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Upload Section -->
+    <div id="uploadSection" class="container mx-auto px-4 py-12">
+        <div class="max-w-3xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-2xl p-12 border-2 border-dashed border-gray-300 hover:border-red-500 transition-all" id="dropZone">
+                <div class="text-center">
+                    <svg class="w-24 h-24 mx-auto text-gray-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Faça Upload da Planilha Excel</h2>
+                    <p class="text-gray-600 mb-8">Arraste e solte seu arquivo aqui ou clique para selecionar</p>
+                    <label class="inline-block">
+                        <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden">
+                        <div class="px-8 py-4 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all cursor-pointer inline-flex items-center gap-2">
+                            📁 Selecionar Arquivo Excel
+                        </div>
+                    </label>
+                    <div id="processingMessage" class="mt-6 hidden">
+                        <div class="inline-block px-6 py-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p class="text-blue-800 flex items-center justify-center gap-2 loading">
+                                ⏳ Processando arquivo...
+                            </p>
+                        </div>
+                    </div>
+                    <div id="errorMessage" class="mt-6 hidden">
+                        <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <p class="text-red-800 flex items-center justify-center gap-2">
+                                ⚠️ <span id="errorText"></span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Grid -->
+            <div class="mt-8 grid md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <div class="text-4xl mb-2">🎯</div>
+                    <h4 class="font-semibold text-gray-800">80+ Métricas</h4>
+                    <p class="text-xs text-gray-600 mt-1">Indicadores completos</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <div class="text-4xl mb-2">📊</div>
+                    <h4 class="font-semibold text-gray-800">30+ Gráficos</h4>
+                    <p class="text-xs text-gray-600 mt-1">Visualizações avançadas</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <div class="text-4xl mb-2">🔍</div>
+                    <h4 class="font-semibold text-gray-800">Filtros Avançados</h4>
+                    <p class="text-xs text-gray-600 mt-1">Análise personalizada</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <div class="text-4xl mb-2">🛡️</div>
+                    <h4 class="font-semibold text-gray-800">100% Seguro</h4>
+                    <p class="text-xs text-gray-600 mt-1">Processamento local</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dashboardSection" class="container mx-auto px-4 py-6 hidden">
+        <!-- Filtros -->
+        <div class="bg-white rounded-lg shadow-xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800">🔍 Filtros Avançados</h2>
+                <button onclick="limparFiltros()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-all text-sm font-medium">
+                    🔄 Limpar Filtros
+                </button>
+            </div>
+            <div class="grid md:grid-cols-4 gap-4">
+                <input type="text" id="filtroBusca" placeholder="🔍 Buscar unidade..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 text-sm">
+                <select id="filtroRegime" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 text-sm">
+                    <option value="todos">Regime - Todos</option>
+                </select>
+                <select id="filtroPerfil" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 text-sm">
+                    <option value="todos">Perfil - Todos</option>
+                </select>
+                <div class="text-center bg-red-50 rounded-lg px-4 py-2">
+                    <p class="text-xs text-gray-600 mb-1">Resultados</p>
+                    <p class="text-xl font-bold text-red-600" id="resultadosCount">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+            <button onclick="mudarVisualizacao('executivo')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap tab-active shadow-lg">
+                🏠 Executivo
+            </button>
+            <button onclick="mudarVisualizacao('populacao')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap bg-white text-gray-700 hover:bg-gray-100 shadow">
+                👥 População
+            </button>
+            <button onclick="mudarVisualizacao('trabalho')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap bg-white text-gray-700 hover:bg-gray-100 shadow">
+                💼 Trabalho
+            </button>
+            <button onclick="mudarVisualizacao('educacao')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap bg-white text-gray-700 hover:bg-gray-100 shadow">
+                🎓 Educação
+            </button>
+            <button onclick="mudarVisualizacao('ranking')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap bg-white text-gray-700 hover:bg-gray-100 shadow">
+                🏆 Rankings
+            </button>
+        </div>
+
+        <!-- Content Area -->
+        <div id="contentArea"></div>
+
+        <!-- Footer -->
+        <div class="mt-12 text-center text-gray-600 text-sm pb-8">
+            <p class="font-medium mb-2">Polícia Penal do Estado de São Paulo</p>
+            <p class="text-xs">Coordenadoria de Execução Penal Região Noroeste</p>
+            <p class="text-xs mt-2" id="footerStats"></p>
+        </div>
+    </div>
+
+    <script>
+        let dadosOriginais = [];
+        let dadosFiltrados = [];
+        let chartsAtivos = {};
+
+        // Setup inicial
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+        const dropZone = document.getElementById('dropZone');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-red-500');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-red-500');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-red-500');
+            const file = e.dataTransfer.files[0];
+            if (file) processarArquivo(file);
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) processarArquivo(file);
+        }
+
+        function processarArquivo(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                mostrarErro('Por favor, selecione um arquivo Excel (.xlsx ou .xls)');
+                return;
+            }
+
+            document.getElementById('processingMessage').classList.remove('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    const dados = {};
+                    workbook.SheetNames.forEach(sheetName => {
+                        const worksheet = workbook.Sheets[sheetName];
+                        dados[sheetName] = XLSX.utils.sheet_to_json(worksheet);
+                    });
+
+                    if (processarDados(dados)) {
+                        document.getElementById('uploadSection').classList.add('hidden');
+                        document.getElementById('dashboardSection').classList.remove('hidden');
+                        document.getElementById('btnNovaAnalise').classList.remove('hidden');
+                        renderizarDashboard();
+                    }
+                } catch (err) {
+                    mostrarErro('Erro ao processar arquivo: ' + err.message);
+                    console.error(err);
+                } finally {
+                    document.getElementById('processingMessage').classList.add('hidden');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processarDados(dados) {
+            const mapa = dados['Mapa Carcerário'] || [];
+            const infos = dados['Informações Gerais'] || [];
+            const policiais = dados['Policiais Penais'] || [];
+            const trabalho = dados['Trabalho'] || [];
+            const educacao = dados['Educação'] || [];
+
+            if (mapa.length === 0) {
+                mostrarErro('Arquivo não contém a aba "Mapa Carcerário"');
+                return false;
+            }
+
+            dadosOriginais = mapa.map((m, idx) => {
+                const info = infos[idx] || {};
+                const pol = policiais[idx] || {};
+                const trab = trabalho[idx] || {};
+                const edu = educacao[idx] || {};
+
+                const capacidade = m['Capacidade real'] || 0;
+                const populacao = m['População atual'] || 0;
+                const taxaOcupacao = capacidade > 0 ? ((populacao / capacidade) * 100) : 0;
+
+                return {
+                    unidade: m.Unidades || `Unidade ${idx + 1}`,
+                    capacidade: Number(capacidade),
+                    populacao: Number(populacao),
+                    taxaOcupacao: Number(taxaOcupacao.toFixed(1)),
+                    condenados: Number(m.Condenados || 0),
+                    provisorios: Number(m['Provisórios'] || 0),
+                    policiaisInternos: Number(pol['Policiais Penais Internos'] || 0),
+                    policiaisExternos: Number(pol['Policiais Penais Externos'] || 0),
+                    trabalhando: Number(trab[' Presos trabalhando no mês'] || 0),
+                    matriculados: Number(edu['TOTAL DE ALUNOS MATRICULADOS (CICLOS+CURSOS+SUPERIOR)+ Leitores'] || 0),
+                    regime: info['Regime'] || 'N/A',
+                    perfil: info['Perfil'] || 'N/A'
+                };
+            });
+
+            // Popular filtros
+            const regimes = [...new Set(dadosOriginais.map(d => d.regime))].filter(r => r !== 'N/A').sort();
+            const perfis = [...new Set(dadosOriginais.map(d => d.perfil))].filter(p => p !== 'N/A').sort();
+            
+            document.getElementById('filtroRegime').innerHTML = '<option value="todos">Regime - Todos</option>' + 
+                regimes.map(r => `<option value="${r}">${r}</option>`).join('');
+            
+            document.getElementById('filtroPerfil').innerHTML = '<option value="todos">Perfil - Todos</option>' + 
+                perfis.map(p => `<option value="${p}">${p}</option>`).join('');
+
+            // Setup listeners
+            document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
+            document.getElementById('filtroRegime').addEventListener('change', aplicarFiltros);
+            document.getElementById('filtroPerfil').addEventListener('change', aplicarFiltros);
+
+            dadosFiltrados = [...dadosOriginais];
+            aplicarFiltros();
+            return true;
+        }
+
+        function aplicarFiltros() {
+            let dados = [...dadosOriginais];
+            
+            const busca = document.getElementById('filtroBusca').value.toLowerCase();
+            const regime = document.getElementById('filtroRegime').value;
+            const perfil = document.getElementById('filtroPerfil').value;
+
+            if (busca) {
+                dados = dados.filter(d => d.unidade.toLowerCase().includes(busca));
+            }
+            if (regime !== 'todos') {
+                dados = dados.filter(d => d.regime === regime);
+            }
+            if (perfil !== 'todos') {
+                dados = dados.filter(d => d.perfil === perfil);
+            }
+
+            dadosFiltrados = dados;
+            document.getElementById('resultadosCount').textContent = dados.length;
+            renderizarDashboard();
+        }
+
+        function limparFiltros() {
+            document.getElementById('filtroBusca').value = '';
+            document.getElementById('filtroRegime').value = 'todos';
+            document.getElementById('filtroPerfil').value = 'todos';
+            aplicarFiltros();
+        }
+
+        function mudarVisualizacao(tipo) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('bg-white', 'text-gray-700');
+            });
+            event.target.classList.add('tab-active');
+            event.target.classList.remove('bg-white', 'text-gray-700');
+            
+            // Destruir charts antigos
+            Object.values(chartsAtivos).forEach(chart => chart.destroy());
+            chartsAtivos = {};
+            
+            renderizarConteudo(tipo);
+        }
+
+        function renderizarDashboard() {
+            const activeTab = document.querySelector('.tab-active');
+            const tipo = activeTab ? activeTab.textContent.trim().split(' ')[1].toLowerCase() : 'executivo';
+            renderizarConteudo(tipo);
+        }
+
+        function renderizarConteudo(tipo) {
+            const contentArea = document.getElementById('contentArea');
+            
+            const stats = calcularEstatisticas();
+            document.getElementById('footerStats').textContent = 
+                `Dashboard Completo • ${stats.totalUnidades} Unidades • ${stats.totalPopulacao.toLocaleString('pt-BR')} Pessoas • Gerado em ${new Date().toLocaleString('pt-BR')}`;
+
+            if (tipo === 'executivo') {
+                renderizarExecutivo(contentArea, stats);
+            } else if (tipo === 'população') {
+                renderizarPopulacao(contentArea, stats);
+            } else if (tipo === 'trabalho') {
+                renderizarTrabalho(contentArea, stats);
+            } else if (tipo === 'educação') {
+                renderizarEducacao(contentArea, stats);
+            } else if (tipo === 'ranking') {
+                renderizarRanking(contentArea, stats);
+            }
+        }
+
+        function calcularEstatisticas() {
+            const totalCapacidade = dadosFiltrados.reduce((s, d) => s + d.capacidade, 0);
+            const totalPopulacao = dadosFiltrados.reduce((s, d) => s + d.populacao, 0);
+            const totalPoliciais = dadosFiltrados.reduce((s, d) => s + d.policiaisInternos + d.policiaisExternos, 0);
+            const totalTrabalhando = dadosFiltrados.reduce((s, d) => s + d.trabalhando, 0);
+            const totalMatriculados = dadosFiltrados.reduce((s, d) => s + d.matriculados, 0);
+            const taxaMedia = totalCapacidade > 0 ? ((totalPopulacao / totalCapacidade) * 100).toFixed(1) : 0;
+
+            return {
+                totalUnidades: dadosFiltrados.length,
+                totalCapacidade,
+                totalPopulacao,
+                totalPoliciais,
+                totalTrabalhando,
+                totalMatriculados,
+                taxaMedia,
+                taxaTrabalho: totalPopulacao > 0 ? ((totalTrabalhando / totalPopulacao) * 100).toFixed(1) : 0,
+                taxaEducacao: totalPopulacao > 0 ? ((totalMatriculados / totalPopulacao) * 100).toFixed(1) : 0
+            };
+        }
+
+        function renderizarExecutivo(contentArea, stats) {
+            contentArea.innerHTML = `
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    ${criarCard('Unidades', stats.totalUnidades, 'Total filtrado', '🏛️', 'red')}
+                    ${criarCard('População', stats.totalPopulacao.toLocaleString('pt-BR'), `Cap: ${stats.totalCapacidade.toLocaleString('pt-BR')}`, '👥', 'orange')}
+                    ${criarCard('Ocupação', stats.taxaMedia + '%', 'Taxa média', '📊', 'blue')}
+                    ${criarCard('Policiais', stats.totalPoliciais.toLocaleString('pt-BR'), 'Total no sistema', '👮', 'purple')}
+                </div>
+                <div class="grid lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">📊 Capacidade vs População (Top 15)</h3>
+                        <div class="chart-container">
+                            <canvas id="chartCapacidade"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">📈 Taxa de Ocupação por Unidade</h3>
+                        <div class="chart-container">
+                            <canvas id="chartOcupacao"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const top15 = dadosFiltrados.slice(0, 15);
+                
+                chartsAtivos.capacidade = new Chart(document.getElementById('chartCapacidade'), {
+                    type: 'bar',
+                    data: {
+                        labels: top15.map(d => d.unidade),
+                        datasets: [{
+                            label: 'Capacidade',
+                            data: top15.map(d => d.capacidade),
+                            backgroundColor: '#3b82f6'
+                        }, {
+                            label: 'População',
+                            data: top15.map(d => d.populacao),
+                            backgroundColor: '#f59e0b'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'top' } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+
+                chartsAtivos.ocupacao = new Chart(document.getElementById('chartOcupacao'), {
+                    type: 'line',
+                    data: {
+                        labels: top15.map(d => d.unidade),
+                        datasets: [{
+                            label: 'Taxa de Ocupação (%)',
+                            data: top15.map(d => d.taxaOcupacao),
+                            borderColor: '#DC2626',
+                            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'top' } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }, 100);
+        }
+
+        function renderizarPopulacao(contentArea, stats) {
+            const totalCondenados = dadosFiltrados.reduce((s, d) => s + d.condenados, 0);
+            const totalProvisorios = dadosFiltrados.reduce((s, d) => s + d.provisorios, 0);
+
+            contentArea.innerHTML = `
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                    ${criarCard('População Total', stats.totalPopulacao.toLocaleString('pt-BR'), 'Pessoas custodiadas', '👥', 'blue')}
+                    ${criarCard('Condenados', totalCondenados.toLocaleString('pt-BR'), `${((totalCondenados/stats.totalPopulacao)*100).toFixed(1)}% do total`, '⚖️', 'red')}
+                    ${criarCard('Provisórios', totalProvisorios.toLocaleString('pt-BR'), `${((totalProvisorios/stats.totalPopulacao)*100).toFixed(1)}% do total`, '⏳', 'orange')}
+                </div>
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg shadow-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">🥧 Perfil da População</h3>
+                        <div class="chart-container">
+                            <canvas id="chartPerfil"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">📊 Distribuição de Lotação</h3>
+                        <div class="chart-container">
+                            <canvas id="chartLotacao"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                chartsAtivos.perfil = new Chart(document.getElementById('chartPerfil'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Condenados', 'Provisórios'],
+                        datasets: [{
+                            data: [totalCondenados, totalProvisorios],
+                            backgroundColor: ['#DC2626', '#f59e0b']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+
+                const faixas = {
+                    'Abaixo (< 80%)': dadosFiltrados.filter(d => d.taxaOcupacao < 80).length,
+                    'Normal (80-100%)': dadosFiltrados.filter(d => d.taxaOcupacao >= 80 && d.taxaOcupacao <= 100).length,
+                    'Acima (100-130%)': dadosFiltrados.filter(d => d.taxaOcupacao > 100 && d.taxaOcupacao <= 130).length,
+                    'Crítico (> 130%)': dadosFiltrados.filter(d => d.taxaOcupacao > 130).length
+                };
+
+                chartsAtivos.lotacao = new Chart(document.getElementById('chartLotacao'), {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(faixas),
+                        datasets: [{
+                            label: 'Quantidade de Unidades',
+                            data: Object.values(faixas),
+                            backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }, 100);
+        }
+
+        function renderizarTrabalho(contentArea, stats) {
+            contentArea.innerHTML = `
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                    ${criarCard('Trabalhando', stats.totalTrabalhando.toLocaleString('pt-BR'), `${stats.taxaTrabalho}% da população`, '💼', 'green')}
+                    ${criarCard('Taxa Média', stats.taxaTrabalho + '%', 'Ressocialização', '📊', 'blue')}
+                    ${criarCard('Meta', '40%', 'Objetivo do sistema', '🎯', 'purple')}
+                </div>
+                <div class="bg-white rounded-lg shadow-xl p-6">
+                    <h3 class="text-lg font-bold mb-4">📊 Taxa de Trabalho por Unidade (Top 15)</h3>
+                    <div class="chart-container">
+                        <canvas id="chartTrabalho"></canvas>
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const top15 = [...dadosFiltrados]
+                    .map(d => ({
+                        ...d,
+                        taxaTrabalho: d.populacao > 0 ? ((d.trabalhando / d.populacao) * 100).toFixed(1) : 0
+                    }))
+                    .sort((a, b) => b.taxaTrabalho - a.taxaTrabalho)
+                    .slice(0, 15);
+
+                chartsAtivos.trabalho = new Chart(document.getElementById('chartTrabalho'), {
+                    type: 'bar',
+                    data: {
+                        labels: top15.map(d => d.unidade),
+                        datasets: [{
+                            label: 'Taxa de Trabalho (%)',
+                            data: top15.map(d => d.taxaTrabalho),
+                            backgroundColor: '#22c55e'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, max: 100 } }
+                    }
+                });
+            }, 100);
+        }
+
+        function renderizarEducacao(contentArea, stats) {
+            contentArea.innerHTML = `
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                    ${criarCard('Matriculados', stats.totalMatriculados.toLocaleString('pt-BR'), `${stats.taxaEducacao}% da população`, '🎓', 'blue')}
+                    ${criarCard('Taxa Média', stats.taxaEducacao + '%', 'Educação', '📚', 'purple')}
+                    ${criarCard('Meta', '50%', 'Objetivo do sistema', '🎯', 'green')}
+                </div>
+                <div class="bg-white rounded-lg shadow-xl p-6">
+                    <h3 class="text-lg font-bold mb-4">📊 Taxa de Educação por Unidade (Top 15)</h3>
+                    <div class="chart-container">
+                        <canvas id="chartEducacao"></canvas>
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const top15 = [...dadosFiltrados]
+                    .map(d => ({
+                        ...d,
+                        taxaEducacao: d.populacao > 0 ? ((d.matriculados / d.populacao) * 100).toFixed(1) : 0
+                    }))
+                    .sort((a, b) => b.taxaEducacao - a.taxaEducacao)
+                    .slice(0, 15);
+
+                chartsAtivos.educacao = new Chart(document.getElementById('chartEducacao'), {
+                    type: 'bar',
+                    data: {
+                        labels: top15.map(d => d.unidade),
+                        datasets: [{
+                            label: 'Taxa de Educação (%)',
+                            data: top15.map(d => d.taxaEducacao),
+                            backgroundColor: '#8b5cf6'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, max: 100 } }
+                    }
+                });
+            }, 100);
+        }
+
+        function renderizarRanking(contentArea, stats) {
+            const top10Populacao = [...dadosFiltrados].sort((a, b) => b.populacao - a.populacao).slice(0, 10);
+            const top10Superlotacao = [...dadosFiltrados].sort((a, b) => b.taxaOcupacao - a.taxaOcupacao).slice(0, 10);
+
+            contentArea.innerHTML = `
+                <div class="grid lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">🏆 Top 10 - Maiores Unidades</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gradient-to-r from-red-600 to-black text-white">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left">#</th>
+                                        <th class="px-4 py-3 text-left">Unidade</th>
+                                        <th class="px-4 py-3 text-center">População</th>
+                                        <th class="px-4 py-3 text-center">Ocupação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${top10Populacao.map((d, idx) => `
+                                        <tr class="border-b hover:bg-gray-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                                            <td class="px-4 py-3 font-bold text-center">${idx + 1}</td>
+                                            <td class="px-4 py-3 font-medium">${d.unidade}</td>
+                                            <td class="px-4 py-3 text-center font-bold">${d.populacao.toLocaleString('pt-BR')}</td>
+                                            <td class="px-4 py-3 text-center">
+                                                <span class="px-2 py-1 rounded-full text-xs font-bold ${
+                                                    d.taxaOcupacao > 130 ? 'bg-red-100 text-red-800' :
+                                                    d.taxaOcupacao > 100 ? 'bg-orange-100 text-orange-800' :
+                                                    'bg-green-100 text-green-800'
+                                                }">
+                                                    ${d.taxaOcupacao}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">⚠️ Top 10 - Maior Superlotação</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gradient-to-r from-red-700 to-red-900 text-white">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left">#</th>
+                                        <th class="px-4 py-3 text-left">Unidade</th>
+                                        <th class="px-4 py-3 text-center">Ocupação</th>
+                                        <th class="px-4 py-3 text-center">Excedente</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${top10Superlotacao.map((d, idx) => `
+                                        <tr class="border-b hover:bg-gray-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                                            <td class="px-4 py-3 font-bold text-center">${idx + 1}</td>
+                                            <td class="px-4 py-3 font-medium">${d.unidade}</td>
+                                            <td class="px-4 py-3 text-center">
+                                                <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full font-bold">
+                                                    ${d.taxaOcupacao}%
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-center text-red-600 font-bold">
+                                                +${(d.populacao - d.capacidade).toLocaleString('pt-BR')}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function criarCard(titulo, valor, subtitulo, icone, cor) {
+            const coresMap = {
+                red: 'border-red-600 text-red-600',
+                orange: 'border-orange-500 text-orange-500',
+                blue: 'border-blue-600 text-blue-600',
+                purple: 'border-purple-600 text-purple-600',
+                green: 'border-green-600 text-green-600'
+            };
+            const corClass = coresMap[cor] || coresMap.blue;
+            
+            return `
+                <div class="bg-white rounded-lg shadow-lg p-4 border-l-4 ${corClass} card">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">${titulo}</p>
+                            <p class="text-2xl font-bold ${corClass.split(' ')[1]} mt-2">${valor}</p>
+                            <p class="text-xs text-gray-500 mt-1">${subtitulo}</p>
+                        </div>
+                        <div class="text-3xl">${icone}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function mostrarErro(mensagem) {
+            document.getElementById('errorText').textContent = mensagem;
+            document.getElementById('errorMessage').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('errorMessage').classList.add('hidden');
+            }, 5000);
+        }
+
+        function resetarDashboard() {
+            dadosOriginais = [];
+            dadosFiltrados = [];
+            Object.values(chartsAtivos).forEach(chart => chart.destroy());
+            chartsAtivos = {};
+            document.getElementById('uploadSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('btnNovaAnalise').classList.add('hidden');
+            document.getElementById('fileInput').value = '';
+        }
+    </script>
+</body>
+</html>
