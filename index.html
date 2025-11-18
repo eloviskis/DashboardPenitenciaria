@@ -3,714 +3,830 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Analítico Completo - Sistema Penitenciário</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <title>Dashboard Geral - Polícia Penal SP</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-        .gradient-red { background: linear-gradient(135deg, #DC2626 0%, #000000 50%, #DC2626 100%); }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .chart-container { position: relative; height: 400px; width: 100%; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .loading { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .tab-active { background-color: #DC2626 !important; color: white !important; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            padding: 20px;
+            border-bottom: 3px solid #dc143c;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-content {
+            max-width: 1800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .header h2 {
+            color: #b0b0b0;
+            font-size: 16px;
+            font-weight: 400;
+            margin-top: 5px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: #dc143c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            padding: 5px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .upload-section {
+            background: rgba(45, 45, 45, 0.9);
+            border: 2px dashed #dc143c;
+            border-radius: 10px;
+            padding: 40px;
+            margin-bottom: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #ff1744;
+            background: rgba(60, 60, 60, 0.9);
+        }
+
+        .upload-section h3 {
+            color: #dc143c;
+            font-size: 22px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .upload-section p {
+            color: #b0b0b0;
+            margin-bottom: 20px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-btn {
+            background: #dc143c;
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .upload-btn:hover {
+            background: #b01030;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(220, 20, 60, 0.4);
+        }
+
+        .tabs-container {
+            background: rgba(45, 45, 45, 0.9);
+            border: 2px solid #dc143c;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .tabs-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #dc143c;
+            padding-bottom: 15px;
+        }
+
+        .tab-button {
+            padding: 12px 20px;
+            background: #1a1a1a;
+            border: 1px solid #555;
+            border-radius: 5px;
+            color: #b0b0b0;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .tab-button:hover {
+            background: #2d2d2d;
+            color: #fff;
+        }
+
+        .tab-button.active {
+            background: #dc143c;
+            color: white;
+            border-color: #dc143c;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .filters-section {
+            background: rgba(35, 35, 35, 0.8);
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .filters-title {
+            color: #dc143c;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            color: #b0b0b0;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 10px;
+            border: 1px solid #555;
+            border-radius: 5px;
+            background: #1a1a1a;
+            color: #ffffff;
+            font-size: 13px;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #dc143c;
+            box-shadow: 0 0 0 2px rgba(220, 20, 60, 0.2);
+        }
+
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: #dc143c;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #b01030;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #555;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #666;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+            border: 2px solid #dc143c;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(220, 20, 60, 0.3);
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #dc143c;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: #b0b0b0;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .chart-card {
+            background: rgba(45, 45, 45, 0.9);
+            border: 2px solid #dc143c;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-title {
+            color: #dc143c;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-left: 4px solid #dc143c;
+            padding-left: 12px;
+        }
+
+        .table-container {
+            background: rgba(45, 45, 45, 0.9);
+            border: 2px solid #dc143c;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #dc143c;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #444;
+            color: #e0e0e0;
+            font-size: 12px;
+        }
+
+        tr:hover {
+            background: rgba(220, 20, 60, 0.15);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #dc143c;
+            font-size: 16px;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+        }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Header -->
-    <header class="gradient-red text-white shadow-2xl sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold mb-1">📊 Dashboard Analítico Completo</h1>
-                    <p class="text-sm opacity-90">Sistema Penitenciário - Região Noroeste</p>
-                </div>
-                <button id="btnNovaAnalise" onclick="resetarDashboard()" class="hidden px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all">
-                    ✖️ Nova Análise
-                </button>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div>
+                <h1>Dashboard Geral - Polícia Penal do Estado de São Paulo</h1>
+                <h2>Coordenadoria de Execução Penal da Região Noroeste</h2>
             </div>
-        </div>
-    </header>
-
-    <!-- Upload Section -->
-    <div id="uploadSection" class="container mx-auto px-4 py-12">
-        <div class="max-w-3xl mx-auto">
-            <div class="bg-white rounded-2xl shadow-2xl p-12 border-2 border-dashed border-gray-300 hover:border-red-500 transition-all" id="dropZone">
-                <div class="text-center">
-                    <svg class="w-24 h-24 mx-auto text-gray-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Faça Upload da Planilha Excel</h2>
-                    <p class="text-gray-600 mb-8">Arraste e solte seu arquivo aqui ou clique para selecionar</p>
-                    <label class="inline-block">
-                        <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden">
-                        <div class="px-8 py-4 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all cursor-pointer inline-flex items-center gap-2">
-                            📁 Selecionar Arquivo Excel
-                        </div>
-                    </label>
-                    <div id="processingMessage" class="mt-6 hidden">
-                        <div class="inline-block px-6 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <p class="text-blue-800 flex items-center justify-center gap-2 loading">
-                                ⏳ Processando arquivo...
-                            </p>
-                        </div>
-                    </div>
-                    <div id="errorMessage" class="mt-6 hidden">
-                        <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
-                            <p class="text-red-800 flex items-center justify-center gap-2">
-                                ⚠️ <span id="errorText"></span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Features Grid -->
-            <div class="mt-8 grid md:grid-cols-4 gap-4">
-                <div class="bg-white rounded-lg shadow p-4 text-center">
-                    <div class="text-4xl mb-2">🎯</div>
-                    <h4 class="font-semibold text-gray-800">80+ Métricas</h4>
-                    <p class="text-xs text-gray-600 mt-1">Indicadores completos</p>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4 text-center">
-                    <div class="text-4xl mb-2">📊</div>
-                    <h4 class="font-semibold text-gray-800">30+ Gráficos</h4>
-                    <p class="text-xs text-gray-600 mt-1">Visualizações avançadas</p>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4 text-center">
-                    <div class="text-4xl mb-2">🔍</div>
-                    <h4 class="font-semibold text-gray-800">Filtros Avançados</h4>
-                    <p class="text-xs text-gray-600 mt-1">Análise personalizada</p>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4 text-center">
-                    <div class="text-4xl mb-2">🛡️</div>
-                    <h4 class="font-semibold text-gray-800">100% Seguro</h4>
-                    <p class="text-xs text-gray-600 mt-1">Processamento local</p>
-                </div>
+            <div class="logo">
+                POLICIA<br>PENAL<br>SP
             </div>
         </div>
     </div>
 
-    <!-- Dashboard Section -->
-    <div id="dashboardSection" class="container mx-auto px-4 py-6 hidden">
-        <!-- Filtros -->
-        <div class="bg-white rounded-lg shadow-xl p-6 mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold text-gray-800">🔍 Filtros Avançados</h2>
-                <button onclick="limparFiltros()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-all text-sm font-medium">
-                    🔄 Limpar Filtros
-                </button>
-            </div>
-            <div class="grid md:grid-cols-4 gap-4">
-                <input type="text" id="filtroBusca" placeholder="🔍 Buscar unidade..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 text-sm">
-                <select id="filtroRegime" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 text-sm">
-                    <option value="todos">Regime - Todos</option>
-                </select>
-                <select id="filtroPerfil" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 text-sm">
-                    <option value="todos">Perfil - Todos</option>
-                </select>
-                <div class="text-center bg-red-50 rounded-lg px-4 py-2">
-                    <p class="text-xs text-gray-600 mb-1">Resultados</p>
-                    <p class="text-xl font-bold text-red-600" id="resultadosCount">0</p>
-                </div>
-            </div>
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="upload-section" id="uploadSection">
+            <h3>📂 Fazer Upload da Planilha</h3>
+            <p>Carregue o arquivo Excel (.xlsx) para análise automática de todas as abas</p>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" />
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                Selecionar Arquivo Excel
+            </button>
+            <p id="fileName" style="margin-top: 15px; color: #dc143c; font-weight: 600;"></p>
         </div>
 
-        <!-- Navigation Tabs -->
-        <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
-            <button onclick="mudarVisualizacao('executivo')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap tab-active shadow-lg">
-                🏠 Executivo
-            </button>
-            <button onclick="mudarVisualizacao('populacao')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap bg-white text-gray-700 hover:bg-gray-100 shadow">
-                👥 População
-            </button>
-            <button onclick="mudarVisualizacao('trabalho')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap bg-white text-gray-700 hover:bg-gray-100 shadow">
-                💼 Trabalho
-            </button>
-            <button onclick="mudarVisualizacao('educacao')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap bg-white text-gray-700 hover:bg-gray-100 shadow">
-                🎓 Educação
-            </button>
-            <button onclick="mudarVisualizacao('ranking')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap bg-white text-gray-700 hover:bg-gray-100 shadow">
-                🏆 Rankings
-            </button>
+        <div class="loading" id="loading">
+            <p>⏳ Processando planilha...</p>
         </div>
 
-        <!-- Content Area -->
-        <div id="contentArea"></div>
-
-        <!-- Footer -->
-        <div class="mt-12 text-center text-gray-600 text-sm pb-8">
-            <p class="font-medium mb-2">Polícia Penal do Estado de São Paulo</p>
-            <p class="text-xs">Coordenadoria de Execução Penal Região Noroeste</p>
-            <p class="text-xs mt-2" id="footerStats"></p>
+        <!-- Tabs Container -->
+        <div class="tabs-container" id="tabsContainer">
+            <div class="tabs-header" id="tabsHeader"></div>
+            <div id="tabsContent"></div>
         </div>
     </div>
 
     <script>
-        let dadosOriginais = [];
-        let dadosFiltrados = [];
-        let chartsAtivos = {};
+        let allData = {};
+        let currentTab = '';
+        let filteredData = {};
+        let charts = {};
 
-        // Setup inicial
-        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
-        const dropZone = document.getElementById('dropZone');
-        
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('border-red-500');
-        });
-        
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('border-red-500');
-        });
-        
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('border-red-500');
-            const file = e.dataTransfer.files[0];
-            if (file) processarArquivo(file);
-        });
+        const colors = {
+            primary: '#dc143c',
+            secondary: '#b01030',
+            dark: '#1a1a1a',
+            gray: '#2d2d2d',
+            light: '#b0b0b0'
+        };
 
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) processarArquivo(file);
-        }
+        // Upload de arquivo
+        document.getElementById('fileInput').addEventListener('change', handleFileUpload);
 
-        function processarArquivo(file) {
-            if (!file.name.match(/\.(xlsx|xls)$/)) {
-                mostrarErro('Por favor, selecione um arquivo Excel (.xlsx ou .xls)');
-                return;
-            }
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-            document.getElementById('processingMessage').classList.remove('hidden');
-            document.getElementById('errorMessage').classList.add('hidden');
+            document.getElementById('fileName').textContent = `Arquivo: ${file.name}`;
+            document.getElementById('loading').classList.add('active');
 
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    const dados = {};
+
+                    allData = {};
                     workbook.SheetNames.forEach(sheetName => {
                         const worksheet = workbook.Sheets[sheetName];
-                        dados[sheetName] = XLSX.utils.sheet_to_json(worksheet);
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                        allData[sheetName] = jsonData;
                     });
 
-                    if (processarDados(dados)) {
-                        document.getElementById('uploadSection').classList.add('hidden');
-                        document.getElementById('dashboardSection').classList.remove('hidden');
-                        document.getElementById('btnNovaAnalise').classList.remove('hidden');
-                        renderizarDashboard();
-                    }
-                } catch (err) {
-                    mostrarErro('Erro ao processar arquivo: ' + err.message);
-                    console.error(err);
+                    initializeDashboard();
+                } catch (error) {
+                    alert('Erro ao processar arquivo: ' + error.message);
                 } finally {
-                    document.getElementById('processingMessage').classList.add('hidden');
+                    document.getElementById('loading').classList.remove('active');
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        function processarDados(dados) {
-            const mapa = dados['Mapa Carcerário'] || [];
-            const infos = dados['Informações Gerais'] || [];
-            const policiais = dados['Policiais Penais'] || [];
-            const trabalho = dados['Trabalho'] || [];
-            const educacao = dados['Educação'] || [];
+        function initializeDashboard() {
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('tabsContainer').style.display = 'block';
 
-            if (mapa.length === 0) {
-                mostrarErro('Arquivo não contém a aba "Mapa Carcerário"');
-                return false;
+            createTabs();
+            if (Object.keys(allData).length > 0) {
+                switchTab(Object.keys(allData)[0]);
             }
+        }
 
-            dadosOriginais = mapa.map((m, idx) => {
-                const info = infos[idx] || {};
-                const pol = policiais[idx] || {};
-                const trab = trabalho[idx] || {};
-                const edu = educacao[idx] || {};
+        function createTabs() {
+            const tabsHeader = document.getElementById('tabsHeader');
+            tabsHeader.innerHTML = '';
 
-                const capacidade = m['Capacidade real'] || 0;
-                const populacao = m['População atual'] || 0;
-                const taxaOcupacao = capacidade > 0 ? ((populacao / capacidade) * 100) : 0;
+            Object.keys(allData).forEach(sheetName => {
+                const button = document.createElement('button');
+                button.className = 'tab-button';
+                button.textContent = sheetName;
+                button.onclick = () => switchTab(sheetName);
+                tabsHeader.appendChild(button);
+            });
+        }
 
-                return {
-                    unidade: m.Unidades || `Unidade ${idx + 1}`,
-                    capacidade: Number(capacidade),
-                    populacao: Number(populacao),
-                    taxaOcupacao: Number(taxaOcupacao.toFixed(1)),
-                    condenados: Number(m.Condenados || 0),
-                    provisorios: Number(m['Provisórios'] || 0),
-                    policiaisInternos: Number(pol['Policiais Penais Internos'] || 0),
-                    policiaisExternos: Number(pol['Policiais Penais Externos'] || 0),
-                    trabalhando: Number(trab[' Presos trabalhando no mês'] || 0),
-                    matriculados: Number(edu['TOTAL DE ALUNOS MATRICULADOS (CICLOS+CURSOS+SUPERIOR)+ Leitores'] || 0),
-                    regime: info['Regime'] || 'N/A',
-                    perfil: info['Perfil'] || 'N/A'
-                };
+        function switchTab(sheetName) {
+            currentTab = sheetName;
+            filteredData[sheetName] = [...allData[sheetName]];
+
+            // Atualizar botões ativos
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === sheetName);
             });
 
-            // Popular filtros
-            const regimes = [...new Set(dadosOriginais.map(d => d.regime))].filter(r => r !== 'N/A').sort();
-            const perfis = [...new Set(dadosOriginais.map(d => d.perfil))].filter(p => p !== 'N/A').sort();
-            
-            document.getElementById('filtroRegime').innerHTML = '<option value="todos">Regime - Todos</option>' + 
-                regimes.map(r => `<option value="${r}">${r}</option>`).join('');
-            
-            document.getElementById('filtroPerfil').innerHTML = '<option value="todos">Perfil - Todos</option>' + 
-                perfis.map(p => `<option value="${p}">${p}</option>`).join('');
-
-            // Setup listeners
-            document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
-            document.getElementById('filtroRegime').addEventListener('change', aplicarFiltros);
-            document.getElementById('filtroPerfil').addEventListener('change', aplicarFiltros);
-
-            dadosFiltrados = [...dadosOriginais];
-            aplicarFiltros();
-            return true;
+            renderTabContent(sheetName);
         }
 
-        function aplicarFiltros() {
-            let dados = [...dadosOriginais];
+        function renderTabContent(sheetName) {
+            const data = allData[sheetName];
+            const tabsContent = document.getElementById('tabsContent');
             
-            const busca = document.getElementById('filtroBusca').value.toLowerCase();
-            const regime = document.getElementById('filtroRegime').value;
-            const perfil = document.getElementById('filtroPerfil').value;
-
-            if (busca) {
-                dados = dados.filter(d => d.unidade.toLowerCase().includes(busca));
-            }
-            if (regime !== 'todos') {
-                dados = dados.filter(d => d.regime === regime);
-            }
-            if (perfil !== 'todos') {
-                dados = dados.filter(d => d.perfil === perfil);
+            if (data.length === 0) {
+                tabsContent.innerHTML = '<p style="text-align:center; color:#b0b0b0;">Nenhum dado disponível nesta aba.</p>';
+                return;
             }
 
-            dadosFiltrados = dados;
-            document.getElementById('resultadosCount').textContent = dados.length;
-            renderizarDashboard();
-        }
+            const columns = Object.keys(data[0]);
+            const unidadeCol = columns.find(col => col.toLowerCase().includes('unidade') || col.toLowerCase().includes('estabelecimento'));
 
-        function limparFiltros() {
-            document.getElementById('filtroBusca').value = '';
-            document.getElementById('filtroRegime').value = 'todos';
-            document.getElementById('filtroPerfil').value = 'todos';
-            aplicarFiltros();
-        }
-
-        function mudarVisualizacao(tipo) {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('tab-active');
-                btn.classList.add('bg-white', 'text-gray-700');
-            });
-            event.target.classList.add('tab-active');
-            event.target.classList.remove('bg-white', 'text-gray-700');
-            
-            // Destruir charts antigos
-            Object.values(chartsAtivos).forEach(chart => chart.destroy());
-            chartsAtivos = {};
-            
-            renderizarConteudo(tipo);
-        }
-
-        function renderizarDashboard() {
-            const activeTab = document.querySelector('.tab-active');
-            const tipo = activeTab ? activeTab.textContent.trim().split(' ')[1].toLowerCase() : 'executivo';
-            renderizarConteudo(tipo);
-        }
-
-        function renderizarConteudo(tipo) {
-            const contentArea = document.getElementById('contentArea');
-            
-            const stats = calcularEstatisticas();
-            document.getElementById('footerStats').textContent = 
-                `Dashboard Completo • ${stats.totalUnidades} Unidades • ${stats.totalPopulacao.toLocaleString('pt-BR')} Pessoas • Gerado em ${new Date().toLocaleString('pt-BR')}`;
-
-            if (tipo === 'executivo') {
-                renderizarExecutivo(contentArea, stats);
-            } else if (tipo === 'população') {
-                renderizarPopulacao(contentArea, stats);
-            } else if (tipo === 'trabalho') {
-                renderizarTrabalho(contentArea, stats);
-            } else if (tipo === 'educação') {
-                renderizarEducacao(contentArea, stats);
-            } else if (tipo === 'ranking') {
-                renderizarRanking(contentArea, stats);
-            }
-        }
-
-        function calcularEstatisticas() {
-            const totalCapacidade = dadosFiltrados.reduce((s, d) => s + d.capacidade, 0);
-            const totalPopulacao = dadosFiltrados.reduce((s, d) => s + d.populacao, 0);
-            const totalPoliciais = dadosFiltrados.reduce((s, d) => s + d.policiaisInternos + d.policiaisExternos, 0);
-            const totalTrabalhando = dadosFiltrados.reduce((s, d) => s + d.trabalhando, 0);
-            const totalMatriculados = dadosFiltrados.reduce((s, d) => s + d.matriculados, 0);
-            const taxaMedia = totalCapacidade > 0 ? ((totalPopulacao / totalCapacidade) * 100).toFixed(1) : 0;
-
-            return {
-                totalUnidades: dadosFiltrados.length,
-                totalCapacidade,
-                totalPopulacao,
-                totalPoliciais,
-                totalTrabalhando,
-                totalMatriculados,
-                taxaMedia,
-                taxaTrabalho: totalPopulacao > 0 ? ((totalTrabalhando / totalPopulacao) * 100).toFixed(1) : 0,
-                taxaEducacao: totalPopulacao > 0 ? ((totalMatriculados / totalPopulacao) * 100).toFixed(1) : 0
-            };
-        }
-
-        function renderizarExecutivo(contentArea, stats) {
-            contentArea.innerHTML = `
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    ${criarCard('Unidades', stats.totalUnidades, 'Total filtrado', '🏛️', 'red')}
-                    ${criarCard('População', stats.totalPopulacao.toLocaleString('pt-BR'), `Cap: ${stats.totalCapacidade.toLocaleString('pt-BR')}`, '👥', 'orange')}
-                    ${criarCard('Ocupação', stats.taxaMedia + '%', 'Taxa média', '📊', 'blue')}
-                    ${criarCard('Policiais', stats.totalPoliciais.toLocaleString('pt-BR'), 'Total no sistema', '👮', 'purple')}
-                </div>
-                <div class="grid lg:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-white rounded-lg shadow-xl p-6">
-                        <h3 class="text-lg font-bold mb-4">📊 Capacidade vs População (Top 15)</h3>
-                        <div class="chart-container">
-                            <canvas id="chartCapacidade"></canvas>
+            tabsContent.innerHTML = `
+                <div class="tab-content active">
+                    <!-- Filtros -->
+                    <div class="filters-section">
+                        <h3 class="filters-title">🔍 Filtros</h3>
+                        <div class="filters-grid" id="filtersGrid_${sheetName}"></div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button class="btn btn-primary" onclick="applyFilters('${sheetName}')">Aplicar</button>
+                            <button class="btn btn-secondary" onclick="clearFilters('${sheetName}')">Limpar</button>
+                            <button class="btn btn-secondary" onclick="exportCSV('${sheetName}')">📥 Exportar CSV</button>
                         </div>
                     </div>
-                    <div class="bg-white rounded-lg shadow-xl p-6">
-                        <h3 class="text-lg font-bold mb-4">📈 Taxa de Ocupação por Unidade</h3>
-                        <div class="chart-container">
-                            <canvas id="chartOcupacao"></canvas>
-                        </div>
+
+                    <!-- Estatísticas -->
+                    <div class="stats-grid" id="stats_${sheetName}"></div>
+
+                    <!-- Gráficos -->
+                    <div class="charts-grid" id="charts_${sheetName}"></div>
+
+                    <!-- Tabela -->
+                    <div class="table-container">
+                        <h3 class="chart-title">📋 Dados Detalhados - ${sheetName}</h3>
+                        <table id="table_${sheetName}"></table>
                     </div>
                 </div>
             `;
 
-            setTimeout(() => {
-                const top15 = dadosFiltrados.slice(0, 15);
+            createFilters(sheetName);
+            updateStats(sheetName);
+            createCharts(sheetName);
+            updateTable(sheetName);
+        }
+
+        function createFilters(sheetName) {
+            const data = allData[sheetName];
+            const columns = Object.keys(data[0]);
+            const filtersGrid = document.getElementById(`filtersGrid_${sheetName}`);
+            
+            // Adicionar filtro de unidade se existir
+            const unidadeCol = columns.find(col => 
+                col.toLowerCase().includes('unidade') || 
+                col.toLowerCase().includes('estabelecimento')
+            );
+
+            if (unidadeCol) {
+                const unidades = [...new Set(data.map(row => row[unidadeCol]).filter(v => v))];
+                const filterDiv = document.createElement('div');
+                filterDiv.className = 'filter-group';
+                filterDiv.innerHTML = `
+                    <label>${unidadeCol}</label>
+                    <select id="filter_${sheetName}_unidade">
+                        <option value="">Todas</option>
+                        ${unidades.map(u => `<option value="${u}">${u}</option>`).join('')}
+                    </select>
+                `;
+                filtersGrid.appendChild(filterDiv);
+            }
+
+            // Adicionar filtros para colunas com poucos valores únicos
+            columns.slice(0, 5).forEach(col => {
+                if (col === unidadeCol) return;
+                const uniqueValues = [...new Set(data.map(row => row[col]).filter(v => v !== '' && v !== null))];
+                if (uniqueValues.length > 0 && uniqueValues.length <= 20) {
+                    const filterDiv = document.createElement('div');
+                    filterDiv.className = 'filter-group';
+                    filterDiv.innerHTML = `
+                        <label>${col}</label>
+                        <select id="filter_${sheetName}_${col.replace(/\s+/g, '_')}">
+                            <option value="">Todos</option>
+                            ${uniqueValues.map(v => `<option value="${v}">${v}</option>`).join('')}
+                        </select>
+                    `;
+                    filtersGrid.appendChild(filterDiv);
+                }
+            });
+        }
+
+        function applyFilters(sheetName) {
+            const selects = document.querySelectorAll(`#filtersGrid_${sheetName} select`);
+            filteredData[sheetName] = allData[sheetName].filter(row => {
+                for (let select of selects) {
+                    if (select.value) {
+                        const label = select.previousElementSibling.textContent;
+                        if (row[label] != select.value) return false;
+                    }
+                }
+                return true;
+            });
+
+            updateStats(sheetName);
+            updateCharts(sheetName);
+            updateTable(sheetName);
+        }
+
+        function clearFilters(sheetName) {
+            document.querySelectorAll(`#filtersGrid_${sheetName} select`).forEach(s => s.value = '');
+            filteredData[sheetName] = [...allData[sheetName]];
+            updateStats(sheetName);
+            updateCharts(sheetName);
+            updateTable(sheetName);
+        }
+
+        function updateStats(sheetName) {
+            const data = filteredData[sheetName] || allData[sheetName];
+            const statsDiv = document.getElementById(`stats_${sheetName}`);
+            const columns = Object.keys(data[0]);
+
+            let statsHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Total de Registros</div>
+                    <div class="stat-value">${data.length}</div>
+                </div>
+            `;
+
+            // Estatísticas numéricas
+            const numericCols = columns.filter(col => {
+                return data.some(row => typeof row[col] === 'number');
+            }).slice(0, 3);
+
+            numericCols.forEach(col => {
+                const values = data.map(row => parseFloat(row[col]) || 0);
+                const sum = values.reduce((a, b) => a + b, 0);
+                const avg = sum / values.length;
                 
-                chartsAtivos.capacidade = new Chart(document.getElementById('chartCapacidade'), {
-                    type: 'bar',
-                    data: {
-                        labels: top15.map(d => d.unidade),
-                        datasets: [{
-                            label: 'Capacidade',
-                            data: top15.map(d => d.capacidade),
-                            backgroundColor: '#3b82f6'
-                        }, {
-                            label: 'População',
-                            data: top15.map(d => d.populacao),
-                            backgroundColor: '#f59e0b'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { position: 'top' } },
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
+                statsHTML += `
+                    <div class="stat-card">
+                        <div class="stat-label">${col}</div>
+                        <div class="stat-value">${Math.round(avg)}</div>
+                        <div class="stat-label" style="font-size: 10px; margin-top: 5px;">Média</div>
+                    </div>
+                `;
+            });
 
-                chartsAtivos.ocupacao = new Chart(document.getElementById('chartOcupacao'), {
-                    type: 'line',
-                    data: {
-                        labels: top15.map(d => d.unidade),
-                        datasets: [{
-                            label: 'Taxa de Ocupação (%)',
-                            data: top15.map(d => d.taxaOcupacao),
-                            borderColor: '#DC2626',
-                            backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { position: 'top' } },
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            }, 100);
+            statsDiv.innerHTML = statsHTML;
         }
 
-        function renderizarPopulacao(contentArea, stats) {
-            const totalCondenados = dadosFiltrados.reduce((s, d) => s + d.condenados, 0);
-            const totalProvisorios = dadosFiltrados.reduce((s, d) => s + d.provisorios, 0);
+        function createCharts(sheetName) {
+            const data = filteredData[sheetName] || allData[sheetName];
+            const chartsDiv = document.getElementById(`charts_${sheetName}`);
+            const columns = Object.keys(data[0]);
 
-            contentArea.innerHTML = `
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                    ${criarCard('População Total', stats.totalPopulacao.toLocaleString('pt-BR'), 'Pessoas custodiadas', '👥', 'blue')}
-                    ${criarCard('Condenados', totalCondenados.toLocaleString('pt-BR'), `${((totalCondenados/stats.totalPopulacao)*100).toFixed(1)}% do total`, '⚖️', 'red')}
-                    ${criarCard('Provisórios', totalProvisorios.toLocaleString('pt-BR'), `${((totalProvisorios/stats.totalPopulacao)*100).toFixed(1)}% do total`, '⏳', 'orange')}
-                </div>
-                <div class="grid lg:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-lg shadow-xl p-6">
-                        <h3 class="text-lg font-bold mb-4">🥧 Perfil da População</h3>
-                        <div class="chart-container">
-                            <canvas id="chartPerfil"></canvas>
-                        </div>
+            let chartsHTML = '';
+
+            // Chart 1: Distribuição de valores da primeira coluna categórica
+            const catCol = columns.find(col => {
+                const uniqueValues = [...new Set(data.map(row => row[col]))];
+                return uniqueValues.length > 2 && uniqueValues.length <= 30;
+            });
+
+            if (catCol) {
+                chartsHTML += `
+                    <div class="chart-card">
+                        <h3 class="chart-title">📊 ${catCol}</h3>
+                        <canvas id="chart1_${sheetName}"></canvas>
                     </div>
-                    <div class="bg-white rounded-lg shadow-xl p-6">
-                        <h3 class="text-lg font-bold mb-4">📊 Distribuição de Lotação</h3>
-                        <div class="chart-container">
-                            <canvas id="chartLotacao"></canvas>
-                        </div>
-                    </div>
-                </div>
-            `;
+                `;
+            }
 
-            setTimeout(() => {
-                chartsAtivos.perfil = new Chart(document.getElementById('chartPerfil'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Condenados', 'Provisórios'],
-                        datasets: [{
-                            data: [totalCondenados, totalProvisorios],
-                            backgroundColor: ['#DC2626', '#f59e0b']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom' } }
-                    }
-                });
-
-                const faixas = {
-                    'Abaixo (< 80%)': dadosFiltrados.filter(d => d.taxaOcupacao < 80).length,
-                    'Normal (80-100%)': dadosFiltrados.filter(d => d.taxaOcupacao >= 80 && d.taxaOcupacao <= 100).length,
-                    'Acima (100-130%)': dadosFiltrados.filter(d => d.taxaOcupacao > 100 && d.taxaOcupacao <= 130).length,
-                    'Crítico (> 130%)': dadosFiltrados.filter(d => d.taxaOcupacao > 130).length
-                };
-
-                chartsAtivos.lotacao = new Chart(document.getElementById('chartLotacao'), {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(faixas),
-                        datasets: [{
-                            label: 'Quantidade de Unidades',
-                            data: Object.values(faixas),
-                            backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            }, 100);
-        }
-
-        function renderizarTrabalho(contentArea, stats) {
-            contentArea.innerHTML = `
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                    ${criarCard('Trabalhando', stats.totalTrabalhando.toLocaleString('pt-BR'), `${stats.taxaTrabalho}% da população`, '💼', 'green')}
-                    ${criarCard('Taxa Média', stats.taxaTrabalho + '%', 'Ressocialização', '📊', 'blue')}
-                    ${criarCard('Meta', '40%', 'Objetivo do sistema', '🎯', 'purple')}
-                </div>
-                <div class="bg-white rounded-lg shadow-xl p-6">
-                    <h3 class="text-lg font-bold mb-4">📊 Taxa de Trabalho por Unidade (Top 15)</h3>
-                    <div class="chart-container">
-                        <canvas id="chartTrabalho"></canvas>
-                    </div>
-                </div>
-            `;
-
-            setTimeout(() => {
-                const top15 = [...dadosFiltrados]
-                    .map(d => ({
-                        ...d,
-                        taxaTrabalho: d.populacao > 0 ? ((d.trabalhando / d.populacao) * 100).toFixed(1) : 0
-                    }))
-                    .sort((a, b) => b.taxaTrabalho - a.taxaTrabalho)
-                    .slice(0, 15);
-
-                chartsAtivos.trabalho = new Chart(document.getElementById('chartTrabalho'), {
-                    type: 'bar',
-                    data: {
-                        labels: top15.map(d => d.unidade),
-                        datasets: [{
-                            label: 'Taxa de Trabalho (%)',
-                            data: top15.map(d => d.taxaTrabalho),
-                            backgroundColor: '#22c55e'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        indexAxis: 'y',
-                        plugins: { legend: { display: false } },
-                        scales: { x: { beginAtZero: true, max: 100 } }
-                    }
-                });
-            }, 100);
-        }
-
-        function renderizarEducacao(contentArea, stats) {
-            contentArea.innerHTML = `
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                    ${criarCard('Matriculados', stats.totalMatriculados.toLocaleString('pt-BR'), `${stats.taxaEducacao}% da população`, '🎓', 'blue')}
-                    ${criarCard('Taxa Média', stats.taxaEducacao + '%', 'Educação', '📚', 'purple')}
-                    ${criarCard('Meta', '50%', 'Objetivo do sistema', '🎯', 'green')}
-                </div>
-                <div class="bg-white rounded-lg shadow-xl p-6">
-                    <h3 class="text-lg font-bold mb-4">📊 Taxa de Educação por Unidade (Top 15)</h3>
-                    <div class="chart-container">
-                        <canvas id="chartEducacao"></canvas>
-                    </div>
-                </div>
-            `;
-
-            setTimeout(() => {
-                const top15 = [...dadosFiltrados]
-                    .map(d => ({
-                        ...d,
-                        taxaEducacao: d.populacao > 0 ? ((d.matriculados / d.populacao) * 100).toFixed(1) : 0
-                    }))
-                    .sort((a, b) => b.taxaEducacao - a.taxaEducacao)
-                    .slice(0, 15);
-
-                chartsAtivos.educacao = new Chart(document.getElementById('chartEducacao'), {
-                    type: 'bar',
-                    data: {
-                        labels: top15.map(d => d.unidade),
-                        datasets: [{
-                            label: 'Taxa de Educação (%)',
-                            data: top15.map(d => d.taxaEducacao),
-                            backgroundColor: '#8b5cf6'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        indexAxis: 'y',
-                        plugins: { legend: { display: false } },
-                        scales: { x: { beginAtZero: true, max: 100 } }
-                    }
-                });
-            }, 100);
-        }
-
-        function renderizarRanking(contentArea, stats) {
-            const top10Populacao = [...dadosFiltrados].sort((a, b) => b.populacao - a.populacao).slice(0, 10);
-            const top10Superlotacao = [...dadosFiltrados].sort((a, b) => b.taxaOcupacao - a.taxaOcupacao).slice(0, 10);
-
-            contentArea.innerHTML = `
-                <div class="grid lg:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-white rounded-lg shadow-xl p-6">
-                        <h3 class="text-lg font-bold mb-4">🏆 Top 10 - Maiores Unidades</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead class="bg-gradient-to-r from-red-600 to-black text-white">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left">#</th>
-                                        <th class="px-4 py-3 text-left">Unidade</th>
-                                        <th class="px-4 py-3 text-center">População</th>
-                                        <th class="px-4 py-3 text-center">Ocupação</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${top10Populacao.map((d, idx) => `
-                                        <tr class="border-b hover:bg-gray-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
-                                            <td class="px-4 py-3 font-bold text-center">${idx + 1}</td>
-                                            <td class="px-4 py-3 font-medium">${d.unidade}</td>
-                                            <td class="px-4 py-3 text-center font-bold">${d.populacao.toLocaleString('pt-BR')}</td>
-                                            <td class="px-4 py-3 text-center">
-                                                <span class="px-2 py-1 rounded-full text-xs font-bold ${
-                                                    d.taxaOcupacao > 130 ? 'bg-red-100 text-red-800' :
-                                                    d.taxaOcupacao > 100 ? 'bg-orange-100 text-orange-800' :
-                                                    'bg-green-100 text-green-800'
-                                                }">
-                                                    ${d.taxaOcupacao}%
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-xl p-6">
-                        <h3 class="text-lg font-bold mb-4">⚠️ Top 10 - Maior Superlotação</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead class="bg-gradient-to-r from-red-700 to-red-900 text-white">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left">#</th>
-                                        <th class="px-4 py-3 text-left">Unidade</th>
-                                        <th class="px-4 py-3 text-center">Ocupação</th>
-                                        <th class="px-4 py-3 text-center">Excedente</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${top10Superlotacao.map((d, idx) => `
-                                        <tr class="border-b hover:bg-gray-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
-                                            <td class="px-4 py-3 font-bold text-center">${idx + 1}</td>
-                                            <td class="px-4 py-3 font-medium">${d.unidade}</td>
-                                            <td class="px-4 py-3 text-center">
-                                                <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full font-bold">
-                                                    ${d.taxaOcupacao}%
-                                                </span>
-                                            </td>
-                                            <td class="px-4 py-3 text-center text-red-600 font-bold">
-                                                +${(d.populacao - d.capacidade).toLocaleString('pt-BR')}
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function criarCard(titulo, valor, subtitulo, icone, cor) {
-            const coresMap = {
-                red: 'border-red-600 text-red-600',
-                orange: 'border-orange-500 text-orange-500',
-                blue: 'border-blue-600 text-blue-600',
-                purple: 'border-purple-600 text-purple-600',
-                green: 'border-green-600 text-green-600'
-            };
-            const corClass = coresMap[cor] || coresMap.blue;
+            // Chart 2: Valores numéricos
+            const numCol = columns.find(col => data.some(row => typeof row[col] === 'number'));
             
-            return `
-                <div class="bg-white rounded-lg shadow-lg p-4 border-l-4 ${corClass} card">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1">
-                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">${titulo}</p>
-                            <p class="text-2xl font-bold ${corClass.split(' ')[1]} mt-2">${valor}</p>
-                            <p class="text-xs text-gray-500 mt-1">${subtitulo}</p>
-                        </div>
-                        <div class="text-3xl">${icone}</div>
+            if (numCol) {
+                chartsHTML += `
+                    <div class="chart-card">
+                        <h3 class="chart-title">📈 ${numCol}</h3>
+                        <canvas id="chart2_${sheetName}"></canvas>
                     </div>
-                </div>
-            `;
-        }
+                `;
+            }
 
-        function mostrarErro(mensagem) {
-            document.getElementById('errorText').textContent = mensagem;
-            document.getElementById('errorMessage').classList.remove('hidden');
+            chartsDiv.innerHTML = chartsHTML;
+
+            // Criar gráficos
             setTimeout(() => {
-                document.getElementById('errorMessage').classList.add('hidden');
-            }, 5000);
+                if (catCol) createCategoricalChart(sheetName, catCol, `chart1_${sheetName}`);
+                if (numCol) createNumericChart(sheetName, numCol, `chart2_${sheetName}`);
+            }, 100);
         }
 
-        function resetarDashboard() {
-            dadosOriginais = [];
-            dadosFiltrados = [];
-            Object.values(chartsAtivos).forEach(chart => chart.destroy());
-            chartsAtivos = {};
-            document.getElementById('uploadSection').classList.remove('hidden');
-            document.getElementById('dashboardSection').classList.add('hidden');
-            document.getElementById('btnNovaAnalise').classList.add('hidden');
-            document.getElementById('fileInput').value = '';
+        function createCategoricalChart(sheetName, column, canvasId) {
+            const data = filteredData[sheetName] || allData[sheetName];
+            const counts = {};
+            
+            data.forEach(row => {
+                const value = row[column] || 'Não Informado';
+                counts[value] = (counts[value] || 0) + 1;
+            });
+
+            const sortedData = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 15);
+
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            if (charts[canvasId]) charts[canvasId].destroy();
+
+            charts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedData.map(d => d[0]),
+                    datasets: [{
+                        label: column,
+                        data: sortedData.map(d => d[1]),
+                        backgroundColor: colors.primary,
+                        borderColor: colors.secondary,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { labels: { color: colors.light } }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { color: colors.light },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: colors.light, font: { size: 10 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createNumericChart(sheetName, column, canvasId) {
+            const data = filteredData[sheetName] || allData[sheetName];
+            const values = data.map(row => parseFloat(row[column]) || 0);
+            
+            const unidadeCol = Object.keys(data[0]).find(col => 
+                col.toLowerCase().includes('unidade') || 
+                col.toLowerCase().includes('estabelecimento')
+            );
+
+            const labels = unidadeCol ? data.map(row => row[unidadeCol]) : data.map((_, i) => `Item ${i + 1}`);
+
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            if (charts[canvasId]) charts[canvasId].destroy();
+
+            charts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.slice(0, 20),
+                    datasets: [{
+                        label: column,
+                        data: values.slice(0, 20),
+                        backgroundColor: colors.primary,
+                        borderColor: colors.secondary,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: colors.light } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: colors.light },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: colors.light, font: { size: 9 }, maxRotation: 90 },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(sheetName) {
+            createCharts(sheetName);
+        }
+
+        function updateTable(sheetName) {
+            const data = filteredData[sheetName] || allData[sheetName];
+            const table = document.getElementById(`table_${sheetName}`);
+            if (!table) return;
+
+            const columns = Object.keys(data[0]);
+            const displayData = data.slice(0, 50); // Limitar a 50 linhas
+
+            let html = '<thead><tr>';
+            columns.forEach(col => {
+                html += `<th>${col}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            displayData.forEach(row => {
+                html += '<tr>';
+                columns.forEach(col => {
+                    html += `<td>${row[col] || '-'}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            if (data.length > 50) {
+                html += `<tr><td colspan="${columns.length}" style="text-align: center; color: ${colors.primary}; font-style: italic;">Mostrando 50 de ${data.length} registros</td></tr>`;
+            }
+
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        function exportCSV(sheetName) {
+            const data = filteredData[sheetName] || allData[sheetName];
+            const columns = Object.keys(data[0]);
+            
+            let csv = columns.join(';') + '\n';
+            data.forEach(row => {
+                csv += columns.map(col => row[col] || '').join(';') + '\n';
+            });
+
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${sheetName}_filtrado.csv`;
+            link.click();
         }
     </script>
 </body>
